@@ -26,6 +26,12 @@ import {
   type OutcomeRecord
 } from "./outcome-learning.js";
 
+import {
+  buildDecisionTrace,
+  type DecisionTrace,
+  type DecisionTraceContext
+} from "./provenance-trace.js";
+
 export type AdaptiveStrategy =
   | "presence-led"
   | "purpose-led"
@@ -38,6 +44,7 @@ export interface AdaptiveSupportInput {
   purpose: PurposeSnapshot;
   engagement?: EngagementContext;
   outcomes?: OutcomeRecord[];
+  trace?: DecisionTraceContext;
 }
 
 export interface AdaptiveSupportDecision extends SupportDecision {
@@ -46,6 +53,7 @@ export interface AdaptiveSupportDecision extends SupportDecision {
   strategy: AdaptiveStrategy;
   engagementMode: EngagementMode;
   learning: LearningSummary;
+  trace: DecisionTrace;
   purposeVisible: boolean;
   safetyOverridesPurpose: boolean;
 }
@@ -75,6 +83,15 @@ export function chooseAdaptiveSupport(
   // Learning remains advisory. It never rewrites the current risk decision.
   const learning = summarizeOutcomes(input.outcomes ?? []);
 
+  // The trace is a structured rationale, not private chain-of-thought.
+  const trace = buildDecisionTrace({
+    supportLevel: base.level,
+    strategy,
+    engagementMode,
+    learning,
+    context: input.trace
+  });
+
   return {
     ...base,
     contextWeight: history,
@@ -82,6 +99,7 @@ export function chooseAdaptiveSupport(
     strategy,
     engagementMode,
     learning,
+    trace,
     purposeVisible: Boolean(input.purpose.statedPurpose),
     safetyOverridesPurpose: base.level === "safety-support"
   };
