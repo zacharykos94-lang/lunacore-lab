@@ -57,6 +57,8 @@ export interface HumanCouncilDecision {
 export interface CouncilSynthesis {
   taskId: string;
   reports: CouncilReport[];
+  duplicateParticipantReports: CouncilReport[];
+  duplicateParticipantIds: string[];
   agreements: string[];
   disagreements: string[];
   minorityReports: CouncilReport[];
