@@ -66,6 +66,11 @@ import {
   type PhysicalSubsystemState
 } from "./physical-resilience.js";
 import {
+  evaluatePhysicalEnergyDemand,
+  type PhysicalEnergyDecision,
+  type PhysicalEnergyDemand
+} from "./physical-energy.js";
+import {
   evaluatePhysicalReadiness,
   type PhysicalReadinessDecision
 } from "./physical-readiness.js";
@@ -84,6 +89,7 @@ export interface LunaCoreInput {
   physicalCapabilities?: PhysicalCapability[];
   physicalCapabilityRequirements?: PhysicalCapabilityRequirement[];
   physicalSubsystems?: PhysicalSubsystemState[];
+  physicalEnergyDemand?: PhysicalEnergyDemand;
   physicalFeedback?: PhysicalFeedbackInput;
   physicalTransitions?: PhysicalTransitionProposal[];
   physicalConstraints?: PhysicalConstraint[];
@@ -101,6 +107,7 @@ export interface LunaCoreDecision {
   physicalChange?: PhysicalChangeDecision;
   physicalCapabilities?: PhysicalCapabilityDecision;
   physicalResilience?: PhysicalResilienceDecision;
+  physicalEnergy?: PhysicalEnergyDecision;
   physicalFeedback?: PhysicalFeedbackDecision;
   physicalConstraints?: PhysicalConstraintDecision;
   physicalOutput?: PhysicalOutputDecision;
@@ -147,6 +154,9 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const physicalResilience = input.physicalSubsystems
     ? evaluatePhysicalResilience(input.physicalSubsystems)
     : undefined;
+  const physicalEnergy = input.physicalEnergyDemand
+    ? evaluatePhysicalEnergyDemand(input.physicalEnergyDemand, resources)
+    : undefined;
 
   const estimatedObservations = physicalState?.estimates.map((estimate) => ({
     name: estimate.variable,
@@ -191,6 +201,10 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     input.physicalOutput?.changesPhysicalState === true &&
     physicalResilience !== undefined &&
     physicalResilience.actionReady === false;
+  const physicalEnergyUnavailable =
+    input.physicalOutput?.changesPhysicalState === true &&
+    physicalEnergy !== undefined &&
+    physicalEnergy.actionReady === false;
 
   const physicalOutput = input.physicalOutput
     ? evaluatePhysicalOutput(input.physicalOutput, {
@@ -200,7 +214,8 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
           spatialTransitionUnknown ||
           requiredPhysicalStateStale ||
           requiredCapabilityUnavailable ||
-          requiredSubsystemUnavailable
+          requiredSubsystemUnavailable ||
+          physicalEnergyUnavailable
             ? "observe"
             : physicalFeedback?.disposition,
         feedbackAdjustmentScale:
@@ -208,7 +223,8 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
           spatialTransitionUnknown ||
           requiredPhysicalStateStale ||
           requiredCapabilityUnavailable ||
-          requiredSubsystemUnavailable
+          requiredSubsystemUnavailable ||
+          physicalEnergyUnavailable
             ? 0
             : physicalFeedback?.adjustmentScale,
         authorized: authorization?.authorized
@@ -225,6 +241,8 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     staleRequiredVariables: physicalChange?.staleRequiredVariables,
     capabilityActionReady: physicalCapabilities?.actionReady,
     resilienceActionReady: physicalResilience?.actionReady,
+    energyStatus: physicalEnergy?.status,
+    energyActionReady: physicalEnergy?.actionReady,
     constraintStatus: physicalConstraints?.status,
     authorizationStatus: authorization?.status,
     outputStatus: physicalOutput?.status
@@ -246,6 +264,9 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     requiredPhysicalStateStale ||
     requiredCapabilityUnavailable ||
     requiredSubsystemUnavailable ||
+    physicalEnergy?.status === "review" ||
+    physicalEnergy?.status === "blocked" ||
+    physicalEnergy?.status === "unknown" ||
     physicalReadiness.status === "review" ||
     physicalReadiness.status === "blocked" ||
     unauthorisedPhysicalAction;
@@ -260,6 +281,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     physicalChange,
     physicalCapabilities,
     physicalResilience,
+    physicalEnergy,
     physicalFeedback,
     physicalConstraints,
     physicalOutput,
