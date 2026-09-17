@@ -186,53 +186,55 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     ? authorizeAction(input.action)
     : undefined;
 
+  const stateChangingOutput =
+    input.physicalOutput?.changesPhysicalState === true;
   const spatialTransitionUnknown =
-    input.physicalOutput?.changesPhysicalState === true &&
+    stateChangingOutput &&
     physicalWorldQuery !== undefined &&
     physicalWorldQuery.reachable !== true;
+  const unresolvedSensorConflict =
+    stateChangingOutput &&
+    (physicalState?.conflictingVariables.length ?? 0) > 0;
   const requiredPhysicalStateStale =
-    input.physicalOutput?.changesPhysicalState === true &&
+    stateChangingOutput &&
     (physicalChange?.staleRequiredVariables.length ?? 0) > 0;
   const requiredCapabilityUnavailable =
-    input.physicalOutput?.changesPhysicalState === true &&
+    stateChangingOutput &&
     physicalCapabilities !== undefined &&
     physicalCapabilities.actionReady === false;
   const requiredSubsystemUnavailable =
-    input.physicalOutput?.changesPhysicalState === true &&
+    stateChangingOutput &&
     physicalResilience !== undefined &&
     physicalResilience.actionReady === false;
   const physicalEnergyUnavailable =
-    input.physicalOutput?.changesPhysicalState === true &&
+    stateChangingOutput &&
     physicalEnergy !== undefined &&
     physicalEnergy.actionReady === false;
+
+  const physicalGateRequiresObservation =
+    physicalConstraints?.status === "blocked" ||
+    spatialTransitionUnknown ||
+    unresolvedSensorConflict ||
+    requiredPhysicalStateStale ||
+    requiredCapabilityUnavailable ||
+    requiredSubsystemUnavailable ||
+    physicalEnergyUnavailable;
 
   const physicalOutput = input.physicalOutput
     ? evaluatePhysicalOutput(input.physicalOutput, {
         availableChannels: physical?.outputChannelsAvailable,
-        feedbackDisposition:
-          physicalConstraints?.status === "blocked" ||
-          spatialTransitionUnknown ||
-          requiredPhysicalStateStale ||
-          requiredCapabilityUnavailable ||
-          requiredSubsystemUnavailable ||
-          physicalEnergyUnavailable
-            ? "observe"
-            : physicalFeedback?.disposition,
-        feedbackAdjustmentScale:
-          physicalConstraints?.status === "blocked" ||
-          spatialTransitionUnknown ||
-          requiredPhysicalStateStale ||
-          requiredCapabilityUnavailable ||
-          requiredSubsystemUnavailable ||
-          physicalEnergyUnavailable
-            ? 0
-            : physicalFeedback?.adjustmentScale,
+        feedbackDisposition: physicalGateRequiresObservation
+          ? "observe"
+          : physicalFeedback?.disposition,
+        feedbackAdjustmentScale: physicalGateRequiresObservation
+          ? 0
+          : physicalFeedback?.adjustmentScale,
         authorized: authorization?.authorized
       })
     : undefined;
 
   const physicalReadiness = evaluatePhysicalReadiness({
-    actionRequested: input.physicalOutput?.changesPhysicalState === true,
+    actionRequested: stateChangingOutput,
     interfaceReadiness: physical?.readiness,
     feedbackDisposition: physicalFeedback?.disposition,
     worldQuerySupplied: input.physicalWorldQuery !== undefined,
@@ -261,6 +263,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     physicalConstraints?.status === "review" ||
     physicalConstraints?.status === "blocked" ||
     spatialTransitionUnknown ||
+    unresolvedSensorConflict ||
     requiredPhysicalStateStale ||
     requiredCapabilityUnavailable ||
     requiredSubsystemUnavailable ||
