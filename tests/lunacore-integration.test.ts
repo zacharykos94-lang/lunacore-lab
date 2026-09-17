@@ -18,8 +18,8 @@ describe("LunaCore v0.2 integration", () => {
           alignment: 1
         },
         engagement: {
-          observationValue: 0.9,
-          hasConcreteTask: false
+          intent: "observe",
+          observationValue: 0.9
         },
         trace: {
           evidence: [
