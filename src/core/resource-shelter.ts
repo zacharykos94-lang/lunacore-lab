@@ -30,6 +30,12 @@ export interface ResourceShelterInput {
 export interface ResourceShelterDecision {
   shelterState: ShelterState;
   priority: ResourcePriority;
+  renewableGeneration: number;
+  nonRenewableGeneration: number;
+  essentialConsumption: number;
+  optionalConsumption: number;
+  reserve: number;
+  minimumReserve: number;
   totalGeneration: number;
   totalConsumption: number;
   netEnergy: number;
@@ -104,6 +110,12 @@ export function evaluateResourceShelter(
   return {
     shelterState,
     priority,
+    renewableGeneration,
+    nonRenewableGeneration,
+    essentialConsumption,
+    optionalConsumption,
+    reserve,
+    minimumReserve,
     totalGeneration,
     totalConsumption,
     netEnergy,

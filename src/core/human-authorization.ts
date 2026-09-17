@@ -3,6 +3,7 @@ export type ActionClass =
   | "communication"
   | "digital-change"
   | "financial"
+  | "physical-interaction"
   | "physical-infrastructure"
   | "account-security"
   | "irreversible";
