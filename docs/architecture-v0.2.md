@@ -111,19 +111,31 @@ Core constraints:
 - Secure shelter should be protected before optional expansion.
 - Physical infrastructure actions require explicit human approval.
 
-## Future Learning Layer
+## Outcome & Learning
 
-A later version may record outcomes from prior support decisions.
+LunaCore may record outcomes from prior support decisions, but learning is advisory rather than authoritative.
 
-That learning system must avoid:
+Outcome records are weighted by relevance and confidence. The learning layer distinguishes helpful, mixed, harmful, and unknown outcomes and limits consideration to a bounded recent history.
 
-- permanent negative labeling
-- treating one event as identity
-- silently increasing control
-- feedback loops that reinforce mistaken assumptions
-- learning that constant activity is inherently better than rest, play, presence, or observation
+A single event cannot establish a permanent pattern. Evidence strength increases only as multiple relevant, confident observations accumulate.
 
-Learning should improve calibration while preserving uncertainty and revision.
+The learning layer may return one of four advisories:
+
+- **insufficient-evidence** — continue observing; do not overlearn
+- **reinforce-current-pattern** — the current approach has repeated supporting evidence
+- **mixed-evidence** — evidence conflicts or remains ambiguous
+- **review-assumption** — repeated harmful outcomes justify reassessing the reasoning
+
+The following invariants are permanent:
+
+- learning cannot assign an identity label to a person
+- learning cannot silently increase authority or control
+- a review recommendation does not rewrite the current risk decision
+- stronger control suggested by past outcomes requires human review
+- evidence remains revisable as new outcomes arrive
+- learning must not encode constant activity as inherently better than rest, play, presence, or observation
+
+Learning should improve calibration while preserving uncertainty, human agency, and the ability to change conclusions when the evidence changes.
 
 ## Separation of Intensity and Strategy
 
@@ -132,6 +144,8 @@ Risk determines **how much** support is justified.
 Context, purpose, and engagement mode determine **how that support should be delivered**.
 
 Resource and shelter stewardship determine whether resilience constraints should limit optional expansion or consumption.
+
+Outcome learning evaluates how prior decisions worked, but it does not directly change the present support level.
 
 This separation prevents history or purpose from suppressing a legitimate safety response while still allowing support to remain personally relevant.
 
