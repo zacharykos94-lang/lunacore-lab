@@ -11,14 +11,23 @@ export function findEligibleParticipant(
   participantId: string,
   requiredCapability?: string
 ): RegistryDecision {
-  const participant = participants.find((item) => item.id === participantId);
+  const matches = participants.filter((item) => item.id === participantId);
 
-  if (!participant) {
+  if (matches.length === 0) {
     return {
       eligible: false,
       reason: "The requested participant is not registered."
     };
   }
+
+  if (matches.length > 1) {
+    return {
+      eligible: false,
+      reason: "The participant identity is ambiguous because the registry contains duplicate ids."
+    };
+  }
+
+  const participant = matches[0];
 
   if (!participant.active) {
     return {
