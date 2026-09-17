@@ -80,6 +80,9 @@ export function evaluatePhysicalReadiness(
   ) {
     reviewSignals.push("spatial-transition-unknown");
   }
+  if ((input.conflictingVariables?.length ?? 0) > 0) {
+    reviewSignals.push("sensor-conflict");
+  }
   if ((input.staleRequiredVariables?.length ?? 0) > 0) {
     reviewSignals.push("required-state-stale");
   }
@@ -132,8 +135,7 @@ export function evaluatePhysicalReadiness(
     input.interfaceReadiness === "observe" ||
     input.feedbackDisposition === "observe" ||
     input.outputStatus === "observe" ||
-    input.outputStatus === "unavailable" ||
-    (input.conflictingVariables?.length ?? 0) > 0;
+    input.outputStatus === "unavailable";
 
   if (observationNeeded) {
     return {
