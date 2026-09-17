@@ -9,6 +9,7 @@ Faith / Values
 → Support Level
 → Engagement Mode
 → Resource / Shelter Stewardship
+→ Decision Trace / Provenance
 → Human Choice
 → Outcome / Learning
 
@@ -111,6 +112,32 @@ Core constraints:
 - Secure shelter should be protected before optional expansion.
 - Physical infrastructure actions require explicit human approval.
 
+## Decision Trace & Provenance
+
+LunaCore should preserve enough provenance for a human to inspect what materially influenced a decision without exposing or depending on private chain-of-thought.
+
+The decision trace records:
+
+- concise decision summary
+- evidence labels and evidence basis
+- bounded confidence values
+- explicit inferences supplied to the trace
+- unresolved unknowns
+- whether human review is required
+
+Evidence basis is classified as direct observation, human statement, historical signal, derived measure, or system rule.
+
+The trace is deliberately bounded. It is not an unlimited surveillance log and does not accumulate every possible detail.
+
+The following invariants apply:
+
+- a decision trace is a structured rationale, not hidden chain-of-thought
+- provenance cannot itself grant new authority
+- evidence confidence is bounded and remains revisable
+- unknowns stay visible rather than being silently converted into facts
+- human-review flags remain explicit
+- trace data should be limited to information relevant to the decision
+
 ## Outcome & Learning
 
 LunaCore may record outcomes from prior support decisions, but learning is advisory rather than authoritative.
@@ -144,6 +171,8 @@ Risk determines **how much** support is justified.
 Context, purpose, and engagement mode determine **how that support should be delivered**.
 
 Resource and shelter stewardship determine whether resilience constraints should limit optional expansion or consumption.
+
+Decision trace and provenance explain the structured basis for a decision and preserve unknowns without changing authority.
 
 Outcome learning evaluates how prior decisions worked, but it does not directly change the present support level.
 
