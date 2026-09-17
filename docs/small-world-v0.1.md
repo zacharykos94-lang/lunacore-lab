@@ -63,6 +63,10 @@ The session boundary synthesizes only admitted reports. Rejected reports stay vi
 
 This v0.1 layer validates declared identity, provenance, routing, and report lineage inside Small-World. It does **not** itself cryptographically authenticate a remote model endpoint. A future live Atlas/Iris adapter must prove endpoint custody/authentication separately before a participant can truthfully use `remote-verified` provenance.
 
+## Current status
+
+This is a draft foundation, not a live federation. The contracts, routing, report-admission, and session boundaries should be adversarially tested before any live model adapter is promoted into the Council. Keep PR #7 draft until that review is complete.
+
 ## Rhythm
 
 `MAP IT → TEST IT → DISAGREE KINDLY → INTEGRATE LAST`
