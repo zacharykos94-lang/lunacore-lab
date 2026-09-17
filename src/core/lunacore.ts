@@ -65,6 +65,10 @@ import {
   type PhysicalResilienceDecision,
   type PhysicalSubsystemState
 } from "./physical-resilience.js";
+import {
+  evaluatePhysicalReadiness,
+  type PhysicalReadinessDecision
+} from "./physical-readiness.js";
 
 export interface LunaCoreInput {
   support: AdaptiveSupportInput;
@@ -100,6 +104,7 @@ export interface LunaCoreDecision {
   physicalFeedback?: PhysicalFeedbackDecision;
   physicalConstraints?: PhysicalConstraintDecision;
   physicalOutput?: PhysicalOutputDecision;
+  physicalReadiness: PhysicalReadinessDecision;
   authorization?: AuthorizationDecision;
   humanReviewRequired: boolean;
 }
@@ -210,6 +215,21 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
       })
     : undefined;
 
+  const physicalReadiness = evaluatePhysicalReadiness({
+    actionRequested: input.physicalOutput?.changesPhysicalState === true,
+    interfaceReadiness: physical?.readiness,
+    feedbackDisposition: physicalFeedback?.disposition,
+    worldQuerySupplied: input.physicalWorldQuery !== undefined,
+    worldReachable: physicalWorldQuery?.reachable,
+    conflictingVariables: physicalState?.conflictingVariables,
+    staleRequiredVariables: physicalChange?.staleRequiredVariables,
+    capabilityActionReady: physicalCapabilities?.actionReady,
+    resilienceActionReady: physicalResilience?.actionReady,
+    constraintStatus: physicalConstraints?.status,
+    authorizationStatus: authorization?.status,
+    outputStatus: physicalOutput?.status
+  });
+
   const unauthorisedPhysicalAction =
     (physical?.physicalActionRequiresAuthorization === true ||
       physicalFeedback?.physicalActionRequiresAuthorization === true ||
@@ -226,6 +246,8 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     requiredPhysicalStateStale ||
     requiredCapabilityUnavailable ||
     requiredSubsystemUnavailable ||
+    physicalReadiness.status === "review" ||
+    physicalReadiness.status === "blocked" ||
     unauthorisedPhysicalAction;
 
   return {
@@ -241,6 +263,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     physicalFeedback,
     physicalConstraints,
     physicalOutput,
+    physicalReadiness,
     authorization,
     humanReviewRequired
   };
