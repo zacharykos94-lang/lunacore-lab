@@ -15,7 +15,8 @@ External World
 → Bounded Feedback Decision
 → LunaCore Reasoning
 → Human Authorization
-→ Output / Physical Interaction
+→ Abstract Output Intent
+→ Physical Interaction
 → New Sensory Input
 
 ## Sensory Input
@@ -54,6 +55,26 @@ Output uses the same open-channel principle.
 An output channel may eventually represent visual signaling, sound, motion, force, flow, light, display, deformation, or another interaction mechanism. LunaCore does not assume that output requires limbs, wheels, motors, rigid structures, or any other specific implementation.
 
 Visual output is supported as one possible output channel.
+
+## Abstract Output Intent
+
+LunaCore may describe an intended output without encoding a device command.
+
+An output intent can identify:
+
+- purpose
+- a preferred abstract channel when one is already known to be available
+- a bounded requested scale
+- whether the output changes physical state
+- whether the intended effect is external and reversible
+
+If a preferred channel is unavailable, LunaCore does not invent a replacement mechanism. If no channel has been selected, multiple eligible channels may remain visible for later engineering or human choice.
+
+For state-changing outputs, the requested scale is bounded by the physical feedback layer. A feedback decision to hold or observe prevents a state-changing output from being treated as ready.
+
+All real-world external output remains subject to the human authorization layer.
+
+The output layer explicitly does **not** specify direct device commands or a physical mechanism. It represents the intended effect at a level that future hardware, fluid systems, visual systems, distributed systems, or other embodiments can implement differently.
 
 ## Environment and Medium
 
@@ -100,7 +121,7 @@ Adjustment scale is bounded and becomes smaller as uncertainty or change cost in
 
 This creates a general loop:
 
-**sense → estimate → compare → hold/stabilize/adjust → re-sense**
+**sense → estimate → compare → hold/stabilize/adjust → authorize → express abstract output → re-sense**
 
 The goal is not maximum motion or perfect control. The goal is maintaining a useful relationship with the physical environment while preserving stability, uncertainty, reversibility, and human agency.
 
@@ -112,7 +133,7 @@ Physical interaction is routed through LunaCore's human authorization layer. Rev
 
 An explicit human rejection always blocks the action.
 
-The feedback layer therefore produces a recommendation about physical state, not permission to affect the world.
+The feedback and output layers therefore produce recommendations and abstract intents about physical state, not permission to affect the world.
 
 ## Design Constraint
 
@@ -120,4 +141,4 @@ Keep the physical interface broad enough that future engineering can become more
 
 The rule for v0.3 is:
 
-> Sense generally. Preserve disagreement. Represent state honestly. Preserve equilibrium. Compare against a desired region. Change only what is justified. Re-observe. Authorize before affecting the world. Leave the mechanism open.
+> Sense generally. Preserve disagreement. Represent state honestly. Preserve equilibrium. Compare against a desired region. Change only what is justified. Authorize before affecting the world. Express intent without assuming mechanism. Re-observe. Leave the mechanism open.
