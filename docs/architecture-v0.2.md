@@ -10,7 +10,7 @@ Faith / Values
 → Engagement Mode
 → Resource / Shelter Stewardship
 → Decision Trace / Provenance
-→ Human Choice
+→ Human Choice / Authorization
 → Outcome / Learning
 
 ## Context
@@ -138,6 +138,32 @@ The following invariants apply:
 - human-review flags remain explicit
 - trace data should be limited to information relevant to the decision
 
+## Human Choice & Authorization
+
+A LunaCore recommendation is not permission to act.
+
+Authorization is evaluated separately from reasoning quality, confidence, or usefulness. Read-only analysis with no external side effect may proceed without additional approval, while external actions require either explicit approval or a valid scoped delegation.
+
+High-impact action classes always require explicit human approval:
+
+- financial actions
+- physical infrastructure actions
+- account or security changes
+- irreversible actions
+
+Delegation may authorize reversible communication or digital changes only when the delegation is active, specifically covers the action, and remains revocable.
+
+An explicit human rejection always blocks the action. Prior approval, confidence, urgency, or delegation cannot silently override a current rejection.
+
+Permanent invariants:
+
+- recommendation is never authorization
+- high-impact actions require explicit approval
+- delegation is scoped and revocable
+- rejection overrides delegation
+- authorization does not expand merely because the system learned from prior success
+- shelter and infrastructure decisions use the same central authorization gate
+
 ## Outcome & Learning
 
 LunaCore may record outcomes from prior support decisions, but learning is advisory rather than authoritative.
@@ -173,6 +199,8 @@ Context, purpose, and engagement mode determine **how that support should be del
 Resource and shelter stewardship determine whether resilience constraints should limit optional expansion or consumption.
 
 Decision trace and provenance explain the structured basis for a decision and preserve unknowns without changing authority.
+
+Human authorization determines whether an external action may actually occur.
 
 Outcome learning evaluates how prior decisions worked, but it does not directly change the present support level.
 
