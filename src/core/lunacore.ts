@@ -29,6 +29,11 @@ import {
   type PhysicalStateEstimateSet,
   type PhysicalVariableSpec
 } from "./physical-state-estimator.js";
+import {
+  evaluatePhysicalOutput,
+  type PhysicalOutputDecision,
+  type PhysicalOutputRequest
+} from "./physical-output.js";
 
 export interface LunaCoreInput {
   support: AdaptiveSupportInput;
@@ -37,6 +42,7 @@ export interface LunaCoreInput {
   physicalMeasurements?: PhysicalMeasurement[];
   physicalVariableSpecs?: PhysicalVariableSpec[];
   physicalFeedback?: PhysicalFeedbackInput;
+  physicalOutput?: PhysicalOutputRequest;
   action?: AuthorizationRequest;
 }
 
@@ -46,6 +52,7 @@ export interface LunaCoreDecision {
   physical?: PhysicalInterfaceDecision;
   physicalState?: PhysicalStateEstimateSet;
   physicalFeedback?: PhysicalFeedbackDecision;
+  physicalOutput?: PhysicalOutputDecision;
   authorization?: AuthorizationDecision;
   humanReviewRequired: boolean;
 }
@@ -81,13 +88,24 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
         readiness: input.physicalFeedback.readiness ?? physical?.readiness
       })
     : undefined;
+
   const authorization = input.action
     ? authorizeAction(input.action)
     : undefined;
 
+  const physicalOutput = input.physicalOutput
+    ? evaluatePhysicalOutput(input.physicalOutput, {
+        availableChannels: physical?.outputChannelsAvailable,
+        feedbackDisposition: physicalFeedback?.disposition,
+        feedbackAdjustmentScale: physicalFeedback?.adjustmentScale,
+        authorized: authorization?.authorized
+      })
+    : undefined;
+
   const unauthorisedPhysicalAction =
     (physical?.physicalActionRequiresAuthorization === true ||
-      physicalFeedback?.physicalActionRequiresAuthorization === true) &&
+      physicalFeedback?.physicalActionRequiresAuthorization === true ||
+      physicalOutput?.status === "approval-required") &&
     authorization?.authorized !== true;
 
   const humanReviewRequired =
@@ -101,6 +119,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     physical,
     physicalState,
     physicalFeedback,
+    physicalOutput,
     authorization,
     humanReviewRequired
   };
