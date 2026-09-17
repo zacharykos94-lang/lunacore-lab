@@ -8,6 +8,7 @@ The purpose of this layer is not to decide what body, robot, vehicle, fluid syst
 
 External World
 → Sensory Channels
+→ Multi-Sensor State Estimate
 → Physical State / Environment
 → Equilibrium / Stability
 → Desired State Region
@@ -24,6 +25,27 @@ Sensory input is represented as extensible named channels rather than a fixed li
 Examples may include visual, acoustic, pressure, temperature, chemical, field, position, contact, flow, or future sensing methods. These are examples only.
 
 Visual input is therefore supported without making vision mandatory or privileged.
+
+## Multi-Sensor State Estimation
+
+Different sensory channels may observe the same physical variable.
+
+LunaCore may combine those measurements into a bounded state estimate using their confidence values, while preserving the source of every measurement.
+
+No sensor type is automatically authoritative. Visual input does not outrank pressure, acoustic, field, contact, flow, or future sensing merely because it is visual.
+
+For each estimated variable, LunaCore preserves:
+
+- estimated value
+- bounded confidence
+- minimum and maximum observed values
+- measurement spread
+- contributing sources
+- whether the observations conflict under a supplied tolerance
+
+A conflict tolerance is optional because meaningful disagreement depends on the variable and its units. If no meaningful tolerance has been supplied, LunaCore reports the spread but does not invent a conflict threshold.
+
+When sensors conflict, confidence is reduced and the disagreement remains visible. The system should prefer additional observation over silently selecting a winning sensor.
 
 ## Output
 
@@ -98,4 +120,4 @@ Keep the physical interface broad enough that future engineering can become more
 
 The rule for v0.3 is:
 
-> Sense generally. Represent state honestly. Preserve equilibrium. Compare against a desired region. Change only what is justified. Re-observe. Authorize before affecting the world. Leave the mechanism open.
+> Sense generally. Preserve disagreement. Represent state honestly. Preserve equilibrium. Compare against a desired region. Change only what is justified. Re-observe. Authorize before affecting the world. Leave the mechanism open.
