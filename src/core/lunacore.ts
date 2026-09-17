@@ -23,11 +23,19 @@ import {
   type PhysicalFeedbackDecision,
   type PhysicalFeedbackInput
 } from "./physical-feedback.js";
+import {
+  estimatePhysicalState,
+  type PhysicalMeasurement,
+  type PhysicalStateEstimateSet,
+  type PhysicalVariableSpec
+} from "./physical-state-estimator.js";
 
 export interface LunaCoreInput {
   support: AdaptiveSupportInput;
   resources?: ResourceShelterInput;
   physical?: PhysicalInterfaceInput;
+  physicalMeasurements?: PhysicalMeasurement[];
+  physicalVariableSpecs?: PhysicalVariableSpec[];
   physicalFeedback?: PhysicalFeedbackInput;
   action?: AuthorizationRequest;
 }
@@ -36,6 +44,7 @@ export interface LunaCoreDecision {
   support: AdaptiveSupportDecision;
   resources?: ResourceShelterDecision;
   physical?: PhysicalInterfaceDecision;
+  physicalState?: PhysicalStateEstimateSet;
   physicalFeedback?: PhysicalFeedbackDecision;
   authorization?: AuthorizationDecision;
   humanReviewRequired: boolean;
@@ -49,9 +58,26 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const physical = input.physical
     ? evaluatePhysicalInterface(input.physical)
     : undefined;
+  const physicalState = input.physicalMeasurements
+    ? estimatePhysicalState(
+        input.physicalMeasurements,
+        input.physicalVariableSpecs ?? []
+      )
+    : undefined;
+
+  const estimatedObservations = physicalState?.estimates.map((estimate) => ({
+    name: estimate.variable,
+    value: estimate.value,
+    confidence: estimate.confidence
+  }));
+
   const physicalFeedback = input.physicalFeedback
     ? evaluatePhysicalFeedback({
         ...input.physicalFeedback,
+        observations:
+          input.physicalFeedback.observations?.length
+            ? input.physicalFeedback.observations
+            : estimatedObservations,
         readiness: input.physicalFeedback.readiness ?? physical?.readiness
       })
     : undefined;
@@ -73,6 +99,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     support,
     resources,
     physical,
+    physicalState,
     physicalFeedback,
     authorization,
     humanReviewRequired
