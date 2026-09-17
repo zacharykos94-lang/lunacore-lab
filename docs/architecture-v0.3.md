@@ -13,6 +13,7 @@ External World
 → Equilibrium / Stability
 → Desired State Region
 → Bounded Feedback Decision
+→ Physical Constraint Envelope
 → LunaCore Reasoning
 → Human Authorization
 → Abstract Output Intent
@@ -119,11 +120,30 @@ The feedback layer deliberately does not specify direct actuator commands. It do
 
 Adjustment scale is bounded and becomes smaller as uncertainty or change cost increases. Every physical change is followed by re-observation rather than assuming the intended effect occurred.
 
+## Physical Constraint Envelope
+
+LunaCore may evaluate a proposed state transition against explicitly supplied physical constraints.
+
+A constraint may represent a minimum, maximum, maximum change, or whether the limit is hard or soft. Variable names and units remain open.
+
+The core does **not** invent missing physical limits. If a relevant limit is unknown, that uncertainty remains visible.
+
+Constraint outcomes are:
+
+- **unknown** — the represented envelope is incomplete
+- **within-envelope** — the proposal is inside all supplied limits
+- **review** — the proposal has a soft conflict or incomplete information
+- **blocked** — the proposal violates an explicitly supplied hard constraint
+
+Human authorization does not erase a hard physical constraint. A blocked transition cannot become ready merely because permission exists.
+
+This makes constraints a representation of known physical boundaries, not a substitute for human authority and not a license for autonomous action.
+
 This creates a general loop:
 
-**sense → estimate → compare → hold/stabilize/adjust → authorize → express abstract output → re-sense**
+**sense → estimate → compare → hold/stabilize/adjust → check known constraints → authorize → express abstract output → re-sense**
 
-The goal is not maximum motion or perfect control. The goal is maintaining a useful relationship with the physical environment while preserving stability, uncertainty, reversibility, and human agency.
+The goal is not maximum motion or perfect control. The goal is maintaining a useful relationship with the physical environment while preserving stability, uncertainty, known constraints, reversibility, and human agency.
 
 ## Physical Interaction and Human Agency
 
@@ -141,4 +161,4 @@ Keep the physical interface broad enough that future engineering can become more
 
 The rule for v0.3 is:
 
-> Sense generally. Preserve disagreement. Represent state honestly. Preserve equilibrium. Compare against a desired region. Change only what is justified. Authorize before affecting the world. Express intent without assuming mechanism. Re-observe. Leave the mechanism open.
+> Sense generally. Preserve disagreement. Represent state honestly. Preserve equilibrium. Compare against a desired region. Respect known constraints without inventing unknown ones. Change only what is justified. Authorize before affecting the world. Express intent without assuming mechanism. Re-observe. Leave the mechanism open.
