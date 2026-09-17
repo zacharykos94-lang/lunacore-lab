@@ -18,11 +18,17 @@ import {
   type PhysicalInterfaceDecision,
   type PhysicalInterfaceInput
 } from "./physical-interface.js";
+import {
+  evaluatePhysicalFeedback,
+  type PhysicalFeedbackDecision,
+  type PhysicalFeedbackInput
+} from "./physical-feedback.js";
 
 export interface LunaCoreInput {
   support: AdaptiveSupportInput;
   resources?: ResourceShelterInput;
   physical?: PhysicalInterfaceInput;
+  physicalFeedback?: PhysicalFeedbackInput;
   action?: AuthorizationRequest;
 }
 
@@ -30,6 +36,7 @@ export interface LunaCoreDecision {
   support: AdaptiveSupportDecision;
   resources?: ResourceShelterDecision;
   physical?: PhysicalInterfaceDecision;
+  physicalFeedback?: PhysicalFeedbackDecision;
   authorization?: AuthorizationDecision;
   humanReviewRequired: boolean;
 }
@@ -42,12 +49,19 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const physical = input.physical
     ? evaluatePhysicalInterface(input.physical)
     : undefined;
+  const physicalFeedback = input.physicalFeedback
+    ? evaluatePhysicalFeedback({
+        ...input.physicalFeedback,
+        readiness: input.physicalFeedback.readiness ?? physical?.readiness
+      })
+    : undefined;
   const authorization = input.action
     ? authorizeAction(input.action)
     : undefined;
 
   const unauthorisedPhysicalAction =
-    physical?.physicalActionRequiresAuthorization === true &&
+    (physical?.physicalActionRequiresAuthorization === true ||
+      physicalFeedback?.physicalActionRequiresAuthorization === true) &&
     authorization?.authorized !== true;
 
   const humanReviewRequired =
@@ -59,6 +73,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     support,
     resources,
     physical,
+    physicalFeedback,
     authorization,
     humanReviewRequired
   };
