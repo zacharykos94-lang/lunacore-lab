@@ -56,30 +56,9 @@ describe("Small-World v0.1 council invariants", () => {
 
   it("preserves dissent instead of forcing consensus", () => {
     const reports: CouncilReport[] = [
-      {
-        participantId: "luna",
-        recommendation: "proceed",
-        evidence: ["e1"],
-        unknowns: [],
-        confidence: 0.7,
-        provenance: "local"
-      },
-      {
-        participantId: "atlas",
-        recommendation: "hold",
-        evidence: ["e2"],
-        unknowns: ["u1"],
-        confidence: 0.8,
-        provenance: "remote-verified"
-      },
-      {
-        participantId: "iris",
-        recommendation: "proceed",
-        evidence: ["e3"],
-        unknowns: [],
-        confidence: 0.6,
-        provenance: "remote-verified"
-      }
+      { participantId: "luna", recommendation: "proceed", evidence: ["e1"], unknowns: [], confidence: 0.7, provenance: "local" },
+      { participantId: "atlas", recommendation: "hold", evidence: ["e2"], unknowns: ["u1"], confidence: 0.8, provenance: "remote-verified" },
+      { participantId: "iris", recommendation: "proceed", evidence: ["e3"], unknowns: [], confidence: 0.6, provenance: "remote-verified" }
     ];
 
     const result = synthesizeCouncil("t3", reports);
@@ -89,56 +68,38 @@ describe("Small-World v0.1 council invariants", () => {
     expect(result.consensusIsAuthority).toBe(false);
   });
 
+  it("does not let one participant manufacture a plurality with duplicate reports", () => {
+    const reports: CouncilReport[] = [
+      { participantId: "atlas", recommendation: "proceed", evidence: ["a1"], unknowns: [], confidence: 0.9, provenance: "remote-verified" },
+      { participantId: "atlas", recommendation: "proceed", evidence: ["a2"], unknowns: [], confidence: 0.9, provenance: "remote-verified" },
+      { participantId: "iris", recommendation: "hold", evidence: ["i1"], unknowns: [], confidence: 0.9, provenance: "remote-verified" }
+    ];
+
+    const result = synthesizeCouncil("t-sybil", reports);
+    expect(result.reports).toHaveLength(2);
+    expect(result.duplicateParticipantIds).toEqual(["atlas"]);
+    expect(result.duplicateParticipantReports).toHaveLength(1);
+    expect(result.disagreements).toEqual(expect.arrayContaining(["proceed", "hold"]));
+    expect(result.reason).toContain("did not receive additional voting weight");
+  });
+
   it("requires explicit human approval for consequential authorization", () => {
     const reports: CouncilReport[] = [
-      {
-        participantId: "luna",
-        recommendation: "proceed",
-        evidence: [],
-        unknowns: [],
-        confidence: 1,
-        provenance: "local"
-      },
-      {
-        participantId: "atlas",
-        recommendation: "proceed",
-        evidence: [],
-        unknowns: [],
-        confidence: 1,
-        provenance: "remote-verified"
-      }
+      { participantId: "luna", recommendation: "proceed", evidence: [], unknowns: [], confidence: 1, provenance: "local" },
+      { participantId: "atlas", recommendation: "proceed", evidence: [], unknowns: [], confidence: 1, provenance: "remote-verified" }
     ];
 
     expect(synthesizeCouncil("t4", reports).consequentialActionAuthorized).toBe(false);
-    expect(
-      synthesizeCouncil("t4", reports, { approved: true }).consequentialActionAuthorized
-    ).toBe(true);
+    expect(synthesizeCouncil("t4", reports, { approved: true }).consequentialActionAuthorized).toBe(true);
   });
 
   it("human rejection overrides unanimous council recommendation", () => {
     const reports: CouncilReport[] = [
-      {
-        participantId: "luna",
-        recommendation: "proceed",
-        evidence: [],
-        unknowns: [],
-        confidence: 1,
-        provenance: "local"
-      },
-      {
-        participantId: "atlas",
-        recommendation: "proceed",
-        evidence: [],
-        unknowns: [],
-        confidence: 1,
-        provenance: "remote-verified"
-      }
+      { participantId: "luna", recommendation: "proceed", evidence: [], unknowns: [], confidence: 1, provenance: "local" },
+      { participantId: "atlas", recommendation: "proceed", evidence: [], unknowns: [], confidence: 1, provenance: "remote-verified" }
     ];
 
-    const result = synthesizeCouncil("t5", reports, {
-      approved: false,
-      rejected: true
-    });
+    const result = synthesizeCouncil("t5", reports, { approved: false, rejected: true });
     expect(result.consequentialActionAuthorized).toBe(false);
   });
 });
