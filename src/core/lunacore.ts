@@ -40,11 +40,21 @@ import {
   type PhysicalConstraintDecision,
   type PhysicalTransitionProposal
 } from "./physical-constraints.js";
+import {
+  buildPhysicalWorldModel,
+  queryPhysicalWorldModel,
+  type PhysicalWorldModelDecision,
+  type PhysicalWorldModelInput,
+  type PhysicalWorldQuery,
+  type PhysicalWorldQueryDecision
+} from "./physical-world-model.js";
 
 export interface LunaCoreInput {
   support: AdaptiveSupportInput;
   resources?: ResourceShelterInput;
   physical?: PhysicalInterfaceInput;
+  physicalWorld?: PhysicalWorldModelInput;
+  physicalWorldQuery?: PhysicalWorldQuery;
   physicalMeasurements?: PhysicalMeasurement[];
   physicalVariableSpecs?: PhysicalVariableSpec[];
   physicalFeedback?: PhysicalFeedbackInput;
@@ -58,6 +68,8 @@ export interface LunaCoreDecision {
   support: AdaptiveSupportDecision;
   resources?: ResourceShelterDecision;
   physical?: PhysicalInterfaceDecision;
+  physicalWorld?: PhysicalWorldModelDecision;
+  physicalWorldQuery?: PhysicalWorldQueryDecision;
   physicalState?: PhysicalStateEstimateSet;
   physicalFeedback?: PhysicalFeedbackDecision;
   physicalConstraints?: PhysicalConstraintDecision;
@@ -74,6 +86,13 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const physical = input.physical
     ? evaluatePhysicalInterface(input.physical)
     : undefined;
+  const physicalWorld = input.physicalWorld
+    ? buildPhysicalWorldModel(input.physicalWorld)
+    : undefined;
+  const physicalWorldQuery =
+    input.physicalWorld && input.physicalWorldQuery
+      ? queryPhysicalWorldModel(input.physicalWorld, input.physicalWorldQuery)
+      : undefined;
   const physicalState = input.physicalMeasurements
     ? estimatePhysicalState(
         input.physicalMeasurements,
@@ -109,15 +128,20 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     ? authorizeAction(input.action)
     : undefined;
 
+  const spatialTransitionUnknown =
+    input.physicalOutput?.changesPhysicalState === true &&
+    physicalWorldQuery !== undefined &&
+    physicalWorldQuery.reachable !== true;
+
   const physicalOutput = input.physicalOutput
     ? evaluatePhysicalOutput(input.physicalOutput, {
         availableChannels: physical?.outputChannelsAvailable,
         feedbackDisposition:
-          physicalConstraints?.status === "blocked"
+          physicalConstraints?.status === "blocked" || spatialTransitionUnknown
             ? "observe"
             : physicalFeedback?.disposition,
         feedbackAdjustmentScale:
-          physicalConstraints?.status === "blocked"
+          physicalConstraints?.status === "blocked" || spatialTransitionUnknown
             ? 0
             : physicalFeedback?.adjustmentScale,
         authorized: authorization?.authorized
@@ -136,12 +160,15 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     authorization?.status === "approval-required" ||
     physicalConstraints?.status === "review" ||
     physicalConstraints?.status === "blocked" ||
+    spatialTransitionUnknown ||
     unauthorisedPhysicalAction;
 
   return {
     support,
     resources,
     physical,
+    physicalWorld,
+    physicalWorldQuery,
     physicalState,
     physicalFeedback,
     physicalConstraints,
