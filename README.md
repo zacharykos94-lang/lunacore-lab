@@ -41,7 +41,7 @@ Current physical-foundation capabilities include:
 - centralized human authorization for real-world effects
 - a final physical-readiness summary that cannot create new authority
 
-A medium such as `water` is simply represented as a medium. No water-specific mechanism is built into the reasoning core, leaving future engineering free to use flow, buoyancy, pressure, deformation, propulsion, distributed actuation, or approaches not yet anticipated.
+A medium such as `water` is simply represented as a medium. No water-specific mechanism is built into the reasoning core, leaving future engineering free to use flow, buoyancy, pressure, deformation, fields, distributed actuation, or approaches not yet anticipated.
 
 ## Core principles
 
@@ -95,6 +95,7 @@ npm start
 - `docs/physical-resilience-v0.3.md` — degraded operation and recovery boundary
 - `docs/physical-energy-v0.3.md` — physical demand and renewable/resource stewardship
 - `docs/physical-readiness-v0.3.md` — final physical-gate summary
+- `docs/v0.3-physical-foundation-checkpoint.md` — stable invariants, intentional non-goals, and promotion/change criteria
 
 ## Development policy
 
