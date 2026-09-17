@@ -1,3 +1,5 @@
+import { boundedFinite, finiteOrNull } from "./physical-number.js";
+
 export interface PhysicalChannel {
   name: string;
   available?: boolean;
@@ -50,14 +52,14 @@ export interface PhysicalInterfaceDecision {
   reason: string;
 }
 
-function bounded(value: number | undefined): number | null {
-  if (value === undefined) return null;
-  return Math.max(0, Math.min(1, value));
-}
-
 function availableChannels(channels: PhysicalChannel[] | undefined): string[] {
   return (channels ?? [])
     .filter((channel) => channel.available !== false)
+    .filter((channel) =>
+      channel.confidence === undefined
+        ? true
+        : boundedFinite(channel.confidence, 0) > 0
+    )
     .map((channel) => channel.name);
 }
 
@@ -66,7 +68,9 @@ export function evaluatePhysicalInterface(
 ): PhysicalInterfaceDecision {
   const sensoryChannelsAvailable = availableChannels(input.sensoryInputs);
   const outputChannelsAvailable = availableChannels(input.outputChannels);
-  const stability = bounded(input.equilibrium?.stability);
+  const rawStability = finiteOrNull(input.equilibrium?.stability);
+  const stability =
+    rawStability === null ? null : boundedFinite(rawStability, 0);
   const equilibriumKnown = stability !== null;
   const environmentKnown = Boolean(
     input.environment?.medium || input.environment?.referenceFrame
