@@ -25,8 +25,8 @@ const exampleDecision = runLunaCore({
       alignment: 0.9
     },
     engagement: {
-      observationValue: 0.8,
-      hasConcreteTask: false
+      intent: "observe",
+      observationValue: 0.8
     },
     trace: {
       evidence: [
