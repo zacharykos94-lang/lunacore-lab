@@ -1,3 +1,5 @@
+import { authorizeAction } from "./human-authorization.js";
+
 export type ShelterState =
   | "secure"
   | "temporary"
@@ -85,8 +87,14 @@ export function evaluateResourceShelter(
       "Energy reserves or current balance are below the preferred operating margin.";
   }
 
-  const physicalActionAuthorized =
-    input.humanApprovalForPhysicalAction === true;
+  const physicalAuthorization = authorizeAction({
+    actionClass: "physical-infrastructure",
+    externalEffect: true,
+    reversible: false,
+    explicitHumanApproval: input.humanApprovalForPhysicalAction
+  });
+
+  const physicalActionAuthorized = physicalAuthorization.authorized;
 
   const optionalExpansionAllowed =
     shelterState === "secure" &&
