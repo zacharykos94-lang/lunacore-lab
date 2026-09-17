@@ -10,6 +10,8 @@ External World
 → Sensory Channels
 → Physical State / Environment
 → Equilibrium / Stability
+→ Desired State Region
+→ Bounded Feedback Decision
 → LunaCore Reasoning
 → Human Authorization
 → Output / Physical Interaction
@@ -57,6 +59,29 @@ Future implementations might use rigid-body locomotion, wheels, legs, propulsion
 
 The architecture should therefore ask **what state change is intended and what constraints apply**, not assume a particular body plan.
 
+## Desired State and Feedback
+
+LunaCore represents a desired physical condition as a general state region rather than as a hardware command.
+
+A state region may use a minimum, maximum, target, or tolerance for a named physical variable. The variable name and units are intentionally open.
+
+The feedback layer can return four high-level dispositions:
+
+- **observe** — uncertainty or confidence is not good enough to justify change
+- **hold** — the represented physical state is already within the desired region
+- **stabilize** — equilibrium takes priority before optional movement or interaction
+- **adjust** — a bounded change may be useful, followed by immediate re-observation
+
+The feedback layer deliberately does not specify direct actuator commands. It does not know whether an adjustment would eventually be produced by a wheel, limb, pressure gradient, fluid flow, field, deformation, buoyancy change, or another mechanism.
+
+Adjustment scale is bounded and becomes smaller as uncertainty or change cost increases. Every physical change is followed by re-observation rather than assuming the intended effect occurred.
+
+This creates a general loop:
+
+**sense → estimate → compare → hold/stabilize/adjust → re-sense**
+
+The goal is not maximum motion or perfect control. The goal is maintaining a useful relationship with the physical environment while preserving stability, uncertainty, reversibility, and human agency.
+
 ## Physical Interaction and Human Agency
 
 A physical recommendation is not authorization to act.
@@ -65,10 +90,12 @@ Physical interaction is routed through LunaCore's human authorization layer. Rev
 
 An explicit human rejection always blocks the action.
 
+The feedback layer therefore produces a recommendation about physical state, not permission to affect the world.
+
 ## Design Constraint
 
 Keep the physical interface broad enough that future engineering can become more specific without forcing LunaCore's reasoning core to be rewritten around one embodiment.
 
 The rule for v0.3 is:
 
-> Sense generally. Represent state honestly. Preserve equilibrium. Describe intended change. Authorize before affecting the world. Leave the mechanism open.
+> Sense generally. Represent state honestly. Preserve equilibrium. Compare against a desired region. Change only what is justified. Re-observe. Authorize before affecting the world. Leave the mechanism open.
