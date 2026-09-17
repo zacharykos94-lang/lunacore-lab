@@ -3,6 +3,7 @@ import type { PhysicalFeedbackDisposition } from "./physical-feedback.js";
 import type { PhysicalConstraintStatus } from "./physical-constraints.js";
 import type { AuthorizationStatus } from "./human-authorization.js";
 import type { PhysicalOutputStatus } from "./physical-output.js";
+import type { PhysicalEnergyStatus } from "./physical-energy.js";
 
 export type PhysicalFoundationStatus =
   | "observe"
@@ -21,6 +22,8 @@ export interface PhysicalReadinessInput {
   staleRequiredVariables?: string[];
   capabilityActionReady?: boolean;
   resilienceActionReady?: boolean;
+  energyStatus?: PhysicalEnergyStatus;
+  energyActionReady?: boolean;
   constraintStatus?: PhysicalConstraintStatus;
   authorizationStatus?: AuthorizationStatus;
   outputStatus?: PhysicalOutputStatus;
@@ -47,6 +50,9 @@ export function evaluatePhysicalReadiness(
   }
   if (input.authorizationStatus === "blocked") {
     blockers.push("human-rejection");
+  }
+  if (input.energyStatus === "blocked") {
+    blockers.push("physical-energy-insufficient");
   }
 
   if (blockers.length > 0) {
@@ -82,6 +88,14 @@ export function evaluatePhysicalReadiness(
   }
   if (input.resilienceActionReady === false) {
     reviewSignals.push("required-subsystem-unavailable");
+  }
+  if (
+    input.energyStatus === "unknown" ||
+    input.energyStatus === "conserve" ||
+    input.energyStatus === "review" ||
+    input.energyActionReady === false
+  ) {
+    reviewSignals.push("physical-energy-not-ready");
   }
 
   if (reviewSignals.length > 0) {
