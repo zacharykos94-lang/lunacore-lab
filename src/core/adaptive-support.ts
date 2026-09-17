@@ -14,6 +14,12 @@ import {
   type PurposeSnapshot
 } from "./purpose.js";
 
+import {
+  chooseEngagementMode,
+  type EngagementContext,
+  type EngagementMode
+} from "./engagement-mode.js";
+
 export type AdaptiveStrategy =
   | "presence-led"
   | "purpose-led"
@@ -24,12 +30,14 @@ export interface AdaptiveSupportInput {
   risk: SupportContext;
   context: ContextSnapshot;
   purpose: PurposeSnapshot;
+  engagement?: EngagementContext;
 }
 
 export interface AdaptiveSupportDecision extends SupportDecision {
   contextWeight: number;
   purposeWeight: number;
   strategy: AdaptiveStrategy;
+  engagementMode: EngagementMode;
   purposeVisible: boolean;
   safetyOverridesPurpose: boolean;
 }
@@ -51,11 +59,17 @@ export function chooseAdaptiveSupport(
     strategy = "context-aware";
   }
 
+  const engagementMode = chooseEngagementMode({
+    supportLevel: base.level,
+    ...(input.engagement ?? {})
+  });
+
   return {
     ...base,
     contextWeight: history,
     purposeWeight: purpose,
     strategy,
+    engagementMode,
     purposeVisible: Boolean(input.purpose.statedPurpose),
     safetyOverridesPurpose: base.level === "safety-support"
   };

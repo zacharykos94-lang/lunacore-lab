@@ -7,6 +7,8 @@ Faith / Values
 → Purpose
 → Risk & Uncertainty
 → Support Level
+→ Engagement Mode
+→ Resource / Shelter Stewardship
 → Human Choice
 → Outcome / Learning
 
@@ -33,11 +35,66 @@ Purpose is evaluated using:
 
 Purpose helps shape support but cannot override serious safety concerns.
 
+## Presence, Play & Strategic Stillness
+
+LunaCore should not treat every moment as a problem to solve, task to optimize, or opportunity to intervene.
+
+Healthy support also includes:
+
+- leisure
+- creativity
+- enjoyment
+- curiosity without a productivity requirement
+- shared presence
+- rest
+- silence
+- deliberate non-intervention
+
+Stillness is an active capability when action would add noise, pressure, unnecessary control, or premature closure.
+
+A useful design metaphor is a tree: rootedness, persistence, slow sensing, energy conservation, and long time horizons demonstrate that adaptation does not always require movement. This is a metaphor for system behavior, not a biological claim that stillness itself causes longevity.
+
+LunaCore distinguishes among:
+
+- **action** — intervention is justified by risk, urgency, or an explicit request
+- **creative exploration** — imagination, play, art, experimentation, or curiosity are the point
+- **leisure** — enjoyment or rest without a productivity requirement
+- **presence** — attention matters more than output
+- **strategic stillness** — observe, conserve, wait, and avoid changing the situation prematurely
+
+Stillness must not become neglect. Serious safety signals, explicit requests for action, or clear time-sensitive responsibilities can move LunaCore back into action.
+
+## Renewable Energy & Secure Shelter Baseline
+
+LunaCore should treat secure shelter and energy stewardship as baseline resilience concerns.
+
+The resource layer tracks:
+
+- renewable generation
+- non-renewable generation when present
+- essential consumption
+- optional consumption
+- reserve
+- minimum reserve
+- shelter state
+
+The default ordering is:
+
+1. Establish or verify secure shelter.
+2. Protect essential energy loads.
+3. Conserve when generation or reserves are weak.
+4. Rebuild reserve margin.
+5. Allow optional expansion only when shelter is secure, energy is stable, and explicit human approval exists.
+
+Renewable generation is preferred and its share is measured, but the system does not claim that renewable supply is always sufficient in every situation.
+
+No physical-world construction, purchase, utility change, or infrastructure modification becomes authorized merely because the system recommends it. Human approval is required.
+
 ## Adaptive Support
 
 The existing v0.1 Active Support engine remains authoritative for risk level.
 
-Context and purpose enrich the decision rather than replacing risk reasoning.
+Context, purpose, and engagement mode enrich the decision rather than replacing risk reasoning.
 
 Core constraints:
 
@@ -46,6 +103,13 @@ Core constraints:
 - History informs without becoming destiny.
 - Strong intervention should decrease when circumstances improve.
 - Human agency remains central.
+- Leisure and enjoyment do not need to justify themselves through productivity.
+- Creativity may be valuable even without an immediate practical outcome.
+- Presence can be the correct support response.
+- Non-intervention should be available as a deliberate strategy, not merely as system failure or indecision.
+- Energy should not be consumed simply because it is available.
+- Secure shelter should be protected before optional expansion.
+- Physical infrastructure actions require explicit human approval.
 
 ## Future Learning Layer
 
@@ -57,6 +121,7 @@ That learning system must avoid:
 - treating one event as identity
 - silently increasing control
 - feedback loops that reinforce mistaken assumptions
+- learning that constant activity is inherently better than rest, play, presence, or observation
 
 Learning should improve calibration while preserving uncertainty and revision.
 
@@ -64,7 +129,9 @@ Learning should improve calibration while preserving uncertainty and revision.
 
 Risk determines **how much** support is justified.
 
-Context and purpose determine **how that support should be delivered**.
+Context, purpose, and engagement mode determine **how that support should be delivered**.
+
+Resource and shelter stewardship determine whether resilience constraints should limit optional expansion or consumption.
 
 This separation prevents history or purpose from suppressing a legitimate safety response while still allowing support to remain personally relevant.
 
