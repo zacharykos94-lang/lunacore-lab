@@ -45,8 +45,9 @@ export interface TaskRouteDecision {
   authorityExpanded: false;
 }
 
-function finiteTimestamp(value: number | undefined): number | undefined {
-  return value !== undefined && Number.isFinite(value) ? value : undefined;
+function safeExpiry(value: number | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  return Number.isFinite(value) ? value : 0;
 }
 
 function normalizeDepth(value: number): number {
@@ -76,7 +77,7 @@ export function createCouncilTask(input: {
       allowDelegation: input.scope.allowDelegation,
       maxDelegationDepth,
       consequential: input.scope.consequential,
-      expiresAt: finiteTimestamp(input.scope.expiresAt)
+      expiresAt: safeExpiry(input.scope.expiresAt)
     },
     delegationDepth: 0,
     visitedParticipantIds: [input.assigneeId],
@@ -94,8 +95,7 @@ export function evaluateCouncilTask(
   const expiresAt = task.scope.expiresAt;
   if (
     expiresAt !== undefined &&
-    Number.isFinite(now) &&
-    now >= expiresAt
+    (!Number.isFinite(now) || now >= expiresAt)
   ) {
     return { ...task, status: "expired" };
   }
