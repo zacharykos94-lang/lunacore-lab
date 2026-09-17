@@ -20,6 +20,12 @@ import {
   type EngagementMode
 } from "./engagement-mode.js";
 
+import {
+  summarizeOutcomes,
+  type LearningSummary,
+  type OutcomeRecord
+} from "./outcome-learning.js";
+
 export type AdaptiveStrategy =
   | "presence-led"
   | "purpose-led"
@@ -31,6 +37,7 @@ export interface AdaptiveSupportInput {
   context: ContextSnapshot;
   purpose: PurposeSnapshot;
   engagement?: EngagementContext;
+  outcomes?: OutcomeRecord[];
 }
 
 export interface AdaptiveSupportDecision extends SupportDecision {
@@ -38,6 +45,7 @@ export interface AdaptiveSupportDecision extends SupportDecision {
   purposeWeight: number;
   strategy: AdaptiveStrategy;
   engagementMode: EngagementMode;
+  learning: LearningSummary;
   purposeVisible: boolean;
   safetyOverridesPurpose: boolean;
 }
@@ -64,12 +72,16 @@ export function chooseAdaptiveSupport(
     ...(input.engagement ?? {})
   });
 
+  // Learning remains advisory. It never rewrites the current risk decision.
+  const learning = summarizeOutcomes(input.outcomes ?? []);
+
   return {
     ...base,
     contextWeight: history,
     purposeWeight: purpose,
     strategy,
     engagementMode,
+    learning,
     purposeVisible: Boolean(input.purpose.statedPurpose),
     safetyOverridesPurpose: base.level === "safety-support"
   };
