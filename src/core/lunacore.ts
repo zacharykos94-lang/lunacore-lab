@@ -34,6 +34,12 @@ import {
   type PhysicalOutputDecision,
   type PhysicalOutputRequest
 } from "./physical-output.js";
+import {
+  evaluatePhysicalConstraints,
+  type PhysicalConstraint,
+  type PhysicalConstraintDecision,
+  type PhysicalTransitionProposal
+} from "./physical-constraints.js";
 
 export interface LunaCoreInput {
   support: AdaptiveSupportInput;
@@ -42,6 +48,8 @@ export interface LunaCoreInput {
   physicalMeasurements?: PhysicalMeasurement[];
   physicalVariableSpecs?: PhysicalVariableSpec[];
   physicalFeedback?: PhysicalFeedbackInput;
+  physicalTransitions?: PhysicalTransitionProposal[];
+  physicalConstraints?: PhysicalConstraint[];
   physicalOutput?: PhysicalOutputRequest;
   action?: AuthorizationRequest;
 }
@@ -52,6 +60,7 @@ export interface LunaCoreDecision {
   physical?: PhysicalInterfaceDecision;
   physicalState?: PhysicalStateEstimateSet;
   physicalFeedback?: PhysicalFeedbackDecision;
+  physicalConstraints?: PhysicalConstraintDecision;
   physicalOutput?: PhysicalOutputDecision;
   authorization?: AuthorizationDecision;
   humanReviewRequired: boolean;
@@ -89,6 +98,13 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
       })
     : undefined;
 
+  const physicalConstraints = input.physicalTransitions
+    ? evaluatePhysicalConstraints(
+        input.physicalTransitions,
+        input.physicalConstraints ?? []
+      )
+    : undefined;
+
   const authorization = input.action
     ? authorizeAction(input.action)
     : undefined;
@@ -96,8 +112,14 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const physicalOutput = input.physicalOutput
     ? evaluatePhysicalOutput(input.physicalOutput, {
         availableChannels: physical?.outputChannelsAvailable,
-        feedbackDisposition: physicalFeedback?.disposition,
-        feedbackAdjustmentScale: physicalFeedback?.adjustmentScale,
+        feedbackDisposition:
+          physicalConstraints?.status === "blocked"
+            ? "observe"
+            : physicalFeedback?.disposition,
+        feedbackAdjustmentScale:
+          physicalConstraints?.status === "blocked"
+            ? 0
+            : physicalFeedback?.adjustmentScale,
         authorized: authorization?.authorized
       })
     : undefined;
@@ -105,12 +127,15 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const unauthorisedPhysicalAction =
     (physical?.physicalActionRequiresAuthorization === true ||
       physicalFeedback?.physicalActionRequiresAuthorization === true ||
+      physicalConstraints?.physicalActionRequiresAuthorization === true ||
       physicalOutput?.status === "approval-required") &&
     authorization?.authorized !== true;
 
   const humanReviewRequired =
     support.trace.humanReviewRequired ||
     authorization?.status === "approval-required" ||
+    physicalConstraints?.status === "review" ||
+    physicalConstraints?.status === "blocked" ||
     unauthorisedPhysicalAction;
 
   return {
@@ -119,6 +144,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     physical,
     physicalState,
     physicalFeedback,
+    physicalConstraints,
     physicalOutput,
     authorization,
     humanReviewRequired
