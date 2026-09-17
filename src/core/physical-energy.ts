@@ -1,4 +1,5 @@
 import type { ResourceShelterDecision } from "./resource-shelter.js";
+import { finiteOrNull, nonNegativeFinite } from "./physical-number.js";
 
 export interface PhysicalEnergyDemand {
   amount: number;
@@ -24,37 +25,55 @@ export interface PhysicalEnergyDecision {
   reason: string;
 }
 
-function nonNegative(value: number): number {
-  return Math.max(0, value);
-}
-
 export function evaluatePhysicalEnergyDemand(
   demand: PhysicalEnergyDemand,
   resources?: ResourceShelterDecision
 ): PhysicalEnergyDecision {
-  const requestedEnergy = nonNegative(demand.amount);
+  const requestedEnergy = nonNegativeFinite(demand.amount, 0);
+  const malformedDemand = finiteOrNull(demand.amount) === null;
 
-  if (!resources) {
+  if (malformedDemand || !resources) {
     return {
-      status: requestedEnergy === 0 ? "ready" : "unknown",
+      status: malformedDemand ? "unknown" : requestedEnergy === 0 ? "ready" : "unknown",
       requestedEnergy,
       currentSurplus: 0,
       reserveHeadroom: 0,
       renewableShare: null,
-      actionReady: requestedEnergy === 0,
+      actionReady: !malformedDemand && requestedEnergy === 0,
       reserveUseRequired: false,
       reason:
-        requestedEnergy === 0
+        malformedDemand
+          ? "Physical energy demand is malformed or non-finite; treat supply readiness as unknown."
+          : requestedEnergy === 0
           ? "No additional physical energy demand is represented."
           : "Physical energy demand is represented but no resource state is available; do not assume energy supply."
     };
   }
 
-  const currentSurplus = Math.max(0, resources.netEnergy);
+  const malformedResources = [
+    resources.netEnergy,
+    resources.reserve,
+    resources.minimumReserve,
+    resources.renewableShare
+  ].some((value) => finiteOrNull(value) === null);
+  const currentSurplus = nonNegativeFinite(resources.netEnergy, 0);
   const reserveHeadroom = Math.max(
     0,
-    resources.reserve - resources.minimumReserve
+    nonNegativeFinite(resources.reserve, 0) - nonNegativeFinite(resources.minimumReserve, 0)
   );
+
+  if (malformedResources) {
+    return {
+      status: "unknown",
+      requestedEnergy,
+      currentSurplus,
+      reserveHeadroom,
+      renewableShare: null,
+      actionReady: false,
+      reserveUseRequired: false,
+      reason: "Resource energy state is malformed or non-finite; do not assume available supply."
+    };
+  }
 
   if (requestedEnergy === 0) {
     return {

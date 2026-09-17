@@ -20,6 +20,8 @@ export interface PhysicalReadinessInput {
   worldReachable?: true | null;
   conflictingVariables?: string[];
   staleRequiredVariables?: string[];
+  unknownRequiredVariables?: string[];
+  invalidStateVariables?: string[];
   capabilityActionReady?: boolean;
   resilienceActionReady?: boolean;
   energyStatus?: PhysicalEnergyStatus;
@@ -85,6 +87,12 @@ export function evaluatePhysicalReadiness(
   }
   if ((input.staleRequiredVariables?.length ?? 0) > 0) {
     reviewSignals.push("required-state-stale");
+  }
+  if ((input.unknownRequiredVariables?.length ?? 0) > 0) {
+    reviewSignals.push("required-state-unknown");
+  }
+  if ((input.invalidStateVariables?.length ?? 0) > 0) {
+    reviewSignals.push("physical-state-invalid");
   }
   if (input.capabilityActionReady === false) {
     reviewSignals.push("required-capability-unavailable");

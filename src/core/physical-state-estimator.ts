@@ -1,3 +1,5 @@
+import { boundedFinite, finiteOrNull } from "./physical-number.js";
+
 export interface PhysicalMeasurement {
   variable: string;
   source: string;
@@ -24,14 +26,10 @@ export interface PhysicalStateEstimate {
 export interface PhysicalStateEstimateSet {
   estimates: PhysicalStateEstimate[];
   conflictingVariables: string[];
+  invalidVariables: string[];
   sourceCount: number;
   preservesSourceDisagreement: true;
   preferredSensorType: null;
-}
-
-function bounded(value: number | undefined, fallback = 0.5): number {
-  if (value === undefined) return fallback;
-  return Math.max(0, Math.min(1, value));
 }
 
 export function estimatePhysicalState(
@@ -43,7 +41,17 @@ export function estimatePhysicalState(
   );
   const grouped = new Map<string, PhysicalMeasurement[]>();
 
+  const invalidVariables = Array.from(new Set(
+    measurements
+      .filter((measurement) =>
+        finiteOrNull(measurement.value) === null ||
+        (measurement.confidence !== undefined && finiteOrNull(measurement.confidence) === null)
+      )
+      .map((measurement) => measurement.variable)
+  ));
+
   for (const measurement of measurements) {
+    if (finiteOrNull(measurement.value) === null) continue;
     const current = grouped.get(measurement.variable) ?? [];
     current.push(measurement);
     grouped.set(measurement.variable, current);
@@ -54,7 +62,7 @@ export function estimatePhysicalState(
   for (const [variable, group] of grouped) {
     const weighted = group.map((measurement) => ({
       ...measurement,
-      boundedConfidence: bounded(measurement.confidence)
+      boundedConfidence: boundedFinite(measurement.confidence, measurement.confidence === undefined ? 0.5 : 0)
     }));
     const totalWeight = weighted.reduce(
       (sum, measurement) => sum + measurement.boundedConfidence,
@@ -74,9 +82,11 @@ export function estimatePhysicalState(
     const minimumObserved = Math.min(...values);
     const maximumObserved = Math.max(...values);
     const spread = maximumObserved - minimumObserved;
-    const tolerance = specByVariable.get(variable)?.conflictTolerance;
+    const suppliedTolerance = specByVariable.get(variable)?.conflictTolerance;
+    const tolerance = finiteOrNull(suppliedTolerance);
     const conflicting =
-      tolerance !== undefined && spread > Math.max(0, tolerance);
+      suppliedTolerance !== undefined &&
+      (tolerance === null || spread > Math.max(0, tolerance));
 
     const averageConfidence =
       weighted.reduce(
@@ -107,6 +117,7 @@ export function estimatePhysicalState(
     conflictingVariables: estimates
       .filter((estimate) => estimate.conflicting)
       .map((estimate) => estimate.variable),
+    invalidVariables,
     sourceCount: new Set(measurements.map((measurement) => measurement.source)).size,
     preservesSourceDisagreement: true,
     preferredSensorType: null

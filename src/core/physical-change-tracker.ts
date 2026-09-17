@@ -1,3 +1,5 @@
+import { boundedFinite, finiteOrNull } from "./physical-number.js";
+
 export interface TimedPhysicalObservation {
   variable: string;
   value: number;
@@ -37,13 +39,9 @@ export interface PhysicalChangeDecision {
   estimates: PhysicalChangeEstimate[];
   staleVariables: string[];
   staleRequiredVariables: string[];
+  unknownRequiredVariables: string[];
   extrapolationPerformed: false;
   futureStateInvented: false;
-}
-
-function bounded(value: number | undefined, fallback = 0.5): number {
-  if (value === undefined) return fallback;
-  return Math.max(0, Math.min(1, value));
 }
 
 export function evaluatePhysicalChange(
@@ -51,12 +49,23 @@ export function evaluatePhysicalChange(
   specs: PhysicalChangeSpec[] = [],
   currentTime?: number
 ): PhysicalChangeDecision {
+  const invalidObservationVariables = new Set(
+    observations
+      .filter((observation) =>
+        finiteOrNull(observation.value) === null ||
+        finiteOrNull(observation.observedAt) === null ||
+        (observation.confidence !== undefined && finiteOrNull(observation.confidence) === null)
+      )
+      .map((observation) => observation.variable)
+  );
+  const currentTimeInvalid = currentTime !== undefined && finiteOrNull(currentTime) === null;
   const specByVariable = new Map(
     specs.map((spec) => [spec.variable, spec])
   );
   const grouped = new Map<string, TimedPhysicalObservation[]>();
 
   for (const observation of observations) {
+    if (finiteOrNull(observation.value) === null || finiteOrNull(observation.observedAt) === null) continue;
     const group = grouped.get(observation.variable) ?? [];
     group.push(observation);
     grouped.set(observation.variable, group);
@@ -78,7 +87,7 @@ export function evaluatePhysicalChange(
         ? delta / elapsed
         : null;
 
-    const stableDelta = Math.max(0, spec?.stableDelta ?? 0);
+    const stableDelta = Math.max(0, finiteOrNull(spec?.stableDelta) ?? 0);
     let trend: PhysicalTrend = "unknown";
     if (delta !== null) {
       if (Math.abs(delta) <= stableDelta) trend = "stable";
@@ -87,19 +96,19 @@ export function evaluatePhysicalChange(
     }
 
     const age =
-      currentTime === undefined
+      currentTime === undefined || finiteOrNull(currentTime) === null
         ? 0
         : Math.max(0, currentTime - latest.observedAt);
     const stale =
       spec?.staleAfter !== undefined &&
-      age > Math.max(0, spec.staleAfter);
+      (currentTimeInvalid || finiteOrNull(spec.staleAfter) === null || age > Math.max(0, spec.staleAfter));
 
     const confidence = previous
       ? Math.min(
-          bounded(latest.confidence),
-          bounded(previous.confidence)
+          boundedFinite(latest.confidence, latest.confidence === undefined ? 0.5 : 0),
+          boundedFinite(previous.confidence, previous.confidence === undefined ? 0.5 : 0)
         )
-      : bounded(latest.confidence);
+      : boundedFinite(latest.confidence, latest.confidence === undefined ? 0.5 : 0);
 
     estimates.push({
       variable,
@@ -123,11 +132,19 @@ export function evaluatePhysicalChange(
   const staleRequiredVariables = estimates
     .filter((estimate) => estimate.stale && estimate.requiredForAction)
     .map((estimate) => estimate.variable);
+  const estimatedVariables = new Set(estimates.map((estimate) => estimate.variable));
+  const unknownRequiredVariables = specs
+    .filter((spec) =>
+      spec.requiredForAction === true &&
+      (!estimatedVariables.has(spec.variable) || invalidObservationVariables.has(spec.variable))
+    )
+    .map((spec) => spec.variable);
 
   return {
     estimates,
     staleVariables,
     staleRequiredVariables,
+    unknownRequiredVariables,
     extrapolationPerformed: false,
     futureStateInvented: false
   };

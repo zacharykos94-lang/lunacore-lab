@@ -1,3 +1,5 @@
+import { boundedFinite, finiteOrNull } from "./physical-number.js";
+
 export interface WorldEntity {
   id: string;
   kind?: string;
@@ -59,11 +61,6 @@ export interface PhysicalWorldQueryDecision {
   reason: string;
 }
 
-function bounded(value: number | undefined, fallback = 0.5): number {
-  if (value === undefined) return fallback;
-  return Math.max(0, Math.min(1, value));
-}
-
 export function buildPhysicalWorldModel(
   input: PhysicalWorldModelInput = {}
 ): PhysicalWorldModelDecision {
@@ -106,9 +103,9 @@ export function buildPhysicalWorldModel(
     }));
 
   const confidences = [
-    ...entities.map((entity) => bounded(entity.confidence)),
-    ...frames.map((frame) => bounded(frame.confidence)),
-    ...relations.map((relation) => bounded(relation.confidence))
+    ...entities.map((entity) => boundedFinite(entity.confidence, entity.confidence === undefined ? 0.5 : 0)),
+    ...frames.map((frame) => boundedFinite(frame.confidence, frame.confidence === undefined ? 0.5 : 0)),
+    ...relations.map((relation) => boundedFinite(relation.confidence, relation.confidence === undefined ? 0.5 : 0))
   ];
   const confidence =
     confidences.length === 0
@@ -176,12 +173,13 @@ export function queryPhysicalWorldModel(
 
   for (const relation of relations) {
     if (relation.transition !== "allowed") continue;
+    if (relation.confidence !== undefined && finiteOrNull(relation.confidence) === null) continue;
     if (!entitySet.has(relation.from) || !entitySet.has(relation.to)) continue;
 
     const forward = adjacency.get(relation.from) ?? [];
     forward.push({
       to: relation.to,
-      confidence: bounded(relation.confidence)
+      confidence: boundedFinite(relation.confidence, 0.5)
     });
     adjacency.set(relation.from, forward);
 
@@ -189,7 +187,7 @@ export function queryPhysicalWorldModel(
       const reverse = adjacency.get(relation.to) ?? [];
       reverse.push({
         to: relation.from,
-        confidence: bounded(relation.confidence)
+        confidence: boundedFinite(relation.confidence, 0.5)
       });
       adjacency.set(relation.to, reverse);
     }

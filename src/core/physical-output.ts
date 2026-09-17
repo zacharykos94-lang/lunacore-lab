@@ -1,4 +1,5 @@
 import type { PhysicalFeedbackDisposition } from "./physical-feedback.js";
+import { boundedFinite, finiteOrNull } from "./physical-number.js";
 
 export interface PhysicalOutputRequest {
   purpose?: string;
@@ -34,11 +35,6 @@ export interface PhysicalOutputDecision {
   reason: string;
 }
 
-function bounded(value: number | undefined, fallback = 0): number {
-  if (value === undefined) return fallback;
-  return Math.max(0, Math.min(1, value));
-}
-
 export function evaluatePhysicalOutput(
   request: PhysicalOutputRequest,
   context: PhysicalOutputContext = {}
@@ -57,8 +53,10 @@ export function evaluatePhysicalOutput(
     ? request.preferredChannel ?? null
     : null;
 
-  const requestedScale = bounded(request.requestedScale, 0.25);
-  const feedbackScale = bounded(
+  const requestedScaleMalformed = request.requestedScale !== undefined && finiteOrNull(request.requestedScale) === null;
+  const feedbackScaleMalformed = context.feedbackAdjustmentScale !== undefined && finiteOrNull(context.feedbackAdjustmentScale) === null;
+  const requestedScale = boundedFinite(request.requestedScale, requestedScaleMalformed ? 0 : 0.25);
+  const feedbackScale = boundedFinite(
     context.feedbackAdjustmentScale,
     requestedScale
   );
@@ -66,6 +64,20 @@ export function evaluatePhysicalOutput(
   const externalEffect = request.externalEffect !== false;
   const authorizationRequired = externalEffect;
   const authorized = !authorizationRequired || context.authorized === true;
+
+  if (requestedScaleMalformed || (changesPhysicalState && feedbackScaleMalformed)) {
+    return {
+      status: "observe",
+      eligibleChannels,
+      selectedChannel,
+      outputScale: 0,
+      authorizationRequired,
+      authorized,
+      directDeviceCommandSpecified: false,
+      mechanismSpecified: false,
+      reason: "The requested or feedback-limited output scale is malformed; re-observe before physical output."
+    };
+  }
 
   if (
     changesPhysicalState &&

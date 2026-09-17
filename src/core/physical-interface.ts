@@ -69,10 +69,16 @@ export function evaluatePhysicalInterface(
   const sensoryChannelsAvailable = availableChannels(input.sensoryInputs);
   const outputChannelsAvailable = availableChannels(input.outputChannels);
   const rawStability = finiteOrNull(input.equilibrium?.stability);
+  const malformedEquilibriumConfidence =
+    input.equilibrium?.confidence !== undefined &&
+    finiteOrNull(input.equilibrium.confidence) === null;
+  const malformedEnvironmentUncertainty =
+    input.environment?.uncertainty !== undefined &&
+    finiteOrNull(input.environment.uncertainty) === null;
   const stability =
-    rawStability === null ? null : boundedFinite(rawStability, 0);
+    rawStability === null || malformedEquilibriumConfidence ? null : boundedFinite(rawStability, 0);
   const equilibriumKnown = stability !== null;
-  const environmentKnown = Boolean(
+  const environmentKnown = !malformedEnvironmentUncertainty && Boolean(
     input.environment?.medium || input.environment?.referenceFrame
   );
   const movementRequested = input.intent?.movementRequested === true;

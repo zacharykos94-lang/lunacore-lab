@@ -1,4 +1,5 @@
 import type { PhysicalReadiness } from "./physical-interface.js";
+import { boundedFinite, finiteOrNull } from "./physical-number.js";
 
 export interface PhysicalStateObservation {
   name: string;
@@ -50,19 +51,13 @@ export interface PhysicalFeedbackDecision {
   reason: string;
 }
 
-function bounded(value: number | undefined, fallback = 0): number {
-  if (value === undefined) return fallback;
-  return Math.max(0, Math.min(1, value));
-}
-
 function regionDeviation(
   observation: PhysicalStateObservation,
   region: DesiredStateRegion
 ): PhysicalDeviation | null {
-  if (observation.value === undefined) return null;
-
-  const value = observation.value;
-  const tolerance = Math.max(0, region.tolerance ?? 0);
+  const value = finiteOrNull(observation.value);
+  if (value === null) return null;
+  const tolerance = Math.max(0, finiteOrNull(region.tolerance) ?? 0);
 
   if (region.minimum !== undefined && value < region.minimum - tolerance) {
     return {
@@ -108,18 +103,31 @@ export function evaluatePhysicalFeedback(
 ): PhysicalFeedbackDecision {
   const observations = input.observations ?? [];
   const regions = input.desiredRegions ?? [];
-  const known = observations.filter((observation) => observation.value !== undefined);
+  const known = observations.filter((observation) => finiteOrNull(observation.value) !== null);
+  const malformedRegion = regions.some((region) =>
+    [region.minimum, region.maximum, region.target, region.tolerance]
+      .some((value) => value !== undefined && finiteOrNull(value) === null)
+  );
 
   const averageConfidence =
     known.length === 0
       ? 0
       : known.reduce(
-          (sum, observation) => sum + bounded(observation.confidence, 0.5),
+          (sum, observation) => sum + boundedFinite(
+            observation.confidence,
+            observation.confidence === undefined ? 0.5 : 0
+          ),
           0
         ) / known.length;
 
-  const uncertainty = bounded(input.environmentalUncertainty);
-  const changeCost = bounded(input.changeCost);
+  const uncertainty = boundedFinite(
+    input.environmentalUncertainty,
+    input.environmentalUncertainty === undefined ? 0 : 1
+  );
+  const changeCost = boundedFinite(
+    input.changeCost,
+    input.changeCost === undefined ? 0 : 1
+  );
 
   const regionByName = new Map(regions.map((region) => [region.name, region]));
   const deviations = known.flatMap((observation) => {
@@ -129,7 +137,7 @@ export function evaluatePhysicalFeedback(
     return deviation ? [deviation] : [];
   });
 
-  if (known.length === 0 || averageConfidence < 0.4 || uncertainty >= 0.75) {
+  if (known.length === 0 || malformedRegion || averageConfidence < 0.4 || uncertainty >= 0.75) {
     return {
       disposition: "observe",
       observationsKnown: known.length,

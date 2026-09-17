@@ -1,3 +1,5 @@
+import { finiteOrNull } from "./physical-number.js";
+
 export interface PhysicalConstraint {
   variable: string;
   minimum?: number;
@@ -59,7 +61,12 @@ export function evaluatePhysicalConstraints(
 
   for (const proposal of proposals) {
     const constraint = constraintByVariable.get(proposal.variable);
-    if (!constraint || proposal.proposedValue === undefined) {
+    const proposedValue = finiteOrNull(proposal.proposedValue);
+    const currentValue = finiteOrNull(proposal.currentValue);
+    const malformedConstraint = constraint !== undefined &&
+      [constraint.minimum, constraint.maximum, constraint.maximumChange]
+        .some((value) => value !== undefined && finiteOrNull(value) === null);
+    if (!constraint || proposedValue === null || malformedConstraint) {
       unknownProposal = true;
       continue;
     }
@@ -69,7 +76,7 @@ export function evaluatePhysicalConstraints(
 
     if (
       constraint.minimum !== undefined &&
-      proposal.proposedValue < constraint.minimum
+      proposedValue < constraint.minimum
     ) {
       violations.push({
         variable: proposal.variable,
@@ -80,7 +87,7 @@ export function evaluatePhysicalConstraints(
 
     if (
       constraint.maximum !== undefined &&
-      proposal.proposedValue > constraint.maximum
+      proposedValue > constraint.maximum
     ) {
       violations.push({
         variable: proposal.variable,
@@ -91,8 +98,13 @@ export function evaluatePhysicalConstraints(
 
     if (
       constraint.maximumChange !== undefined &&
-      proposal.currentValue !== undefined &&
-      Math.abs(proposal.proposedValue - proposal.currentValue) >
+      proposal.currentValue !== undefined && currentValue === null
+    ) {
+      unknownProposal = true;
+    } else if (
+      constraint.maximumChange !== undefined &&
+      currentValue !== null &&
+      Math.abs(proposedValue - currentValue) >
         Math.max(0, constraint.maximumChange)
     ) {
       violations.push({

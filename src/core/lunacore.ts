@@ -198,6 +198,12 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const requiredPhysicalStateStale =
     stateChangingOutput &&
     (physicalChange?.staleRequiredVariables.length ?? 0) > 0;
+  const requiredPhysicalStateUnknown =
+    stateChangingOutput &&
+    (physicalChange?.unknownRequiredVariables.length ?? 0) > 0;
+  const invalidPhysicalState =
+    stateChangingOutput &&
+    (physicalState?.invalidVariables.length ?? 0) > 0;
   const requiredCapabilityUnavailable =
     stateChangingOutput &&
     physicalCapabilities !== undefined &&
@@ -213,9 +219,13 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
 
   const physicalGateRequiresObservation =
     physicalConstraints?.status === "blocked" ||
+    physicalConstraints?.status === "review" ||
+    physical?.readiness === "observe" ||
     spatialTransitionUnknown ||
     unresolvedSensorConflict ||
     requiredPhysicalStateStale ||
+    requiredPhysicalStateUnknown ||
+    invalidPhysicalState ||
     requiredCapabilityUnavailable ||
     requiredSubsystemUnavailable ||
     physicalEnergyUnavailable;
@@ -241,6 +251,8 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     worldReachable: physicalWorldQuery?.reachable,
     conflictingVariables: physicalState?.conflictingVariables,
     staleRequiredVariables: physicalChange?.staleRequiredVariables,
+    unknownRequiredVariables: physicalChange?.unknownRequiredVariables,
+    invalidStateVariables: physicalState?.invalidVariables,
     capabilityActionReady: physicalCapabilities?.actionReady,
     resilienceActionReady: physicalResilience?.actionReady,
     energyStatus: physicalEnergy?.status,
@@ -265,6 +277,8 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     spatialTransitionUnknown ||
     unresolvedSensorConflict ||
     requiredPhysicalStateStale ||
+    requiredPhysicalStateUnknown ||
+    invalidPhysicalState ||
     requiredCapabilityUnavailable ||
     requiredSubsystemUnavailable ||
     physicalEnergy?.status === "review" ||

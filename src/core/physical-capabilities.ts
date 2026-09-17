@@ -1,3 +1,5 @@
+import { boundedFinite, finiteOrNull } from "./physical-number.js";
+
 export interface PhysicalCapability {
   name: string;
   roles: string[];
@@ -27,11 +29,6 @@ export interface PhysicalCapabilityDecision {
   mechanismSelected: false;
   capabilityAssumed: false;
   reason: string;
-}
-
-function bounded(value: number | undefined, fallback = 0.5): number {
-  if (value === undefined) return fallback;
-  return Math.max(0, Math.min(1, value));
 }
 
 export function evaluatePhysicalCapabilities(
@@ -72,12 +69,17 @@ export function evaluatePhysicalCapabilities(
       continue;
     }
 
-    const minimumConfidence = bounded(requirement.minimumConfidence, 0);
+    const malformedMinimum = requirement.minimumConfidence !== undefined &&
+      finiteOrNull(requirement.minimumConfidence) === null;
+    const minimumConfidence = boundedFinite(requirement.minimumConfidence, malformedMinimum ? 1 : 0);
     const bestConfidence = Math.max(
-      ...candidates.map((capability) => bounded(capability.confidence))
+      ...candidates.map((capability) => boundedFinite(
+        capability.confidence,
+        capability.confidence === undefined ? 0.5 : 0
+      ))
     );
 
-    if (bestConfidence < minimumConfidence) {
+    if (malformedMinimum || bestConfidence < minimumConfidence) {
       degradedRequirements.push(requirement.role);
     }
   }

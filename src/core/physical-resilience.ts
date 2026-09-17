@@ -1,3 +1,5 @@
+import { finiteOrNull } from "./physical-number.js";
+
 export type PhysicalSubsystemStatus =
   | "nominal"
   | "degraded"
@@ -54,7 +56,8 @@ export function evaluatePhysicalResilience(
     .filter(
       (subsystem) =>
         subsystem.requiredForAction === true &&
-        subsystem.status === "unknown"
+        (subsystem.status === "unknown" ||
+          (subsystem.confidence !== undefined && finiteOrNull(subsystem.confidence) === null))
     )
     .map((subsystem) => subsystem.name);
 
