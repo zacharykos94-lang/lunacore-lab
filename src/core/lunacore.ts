@@ -54,6 +54,12 @@ import {
   type PhysicalChangeSpec,
   type TimedPhysicalObservation
 } from "./physical-change-tracker.js";
+import {
+  evaluatePhysicalCapabilities,
+  type PhysicalCapability,
+  type PhysicalCapabilityDecision,
+  type PhysicalCapabilityRequirement
+} from "./physical-capabilities.js";
 
 export interface LunaCoreInput {
   support: AdaptiveSupportInput;
@@ -66,6 +72,8 @@ export interface LunaCoreInput {
   physicalTimeline?: TimedPhysicalObservation[];
   physicalChangeSpecs?: PhysicalChangeSpec[];
   physicalCurrentTime?: number;
+  physicalCapabilities?: PhysicalCapability[];
+  physicalCapabilityRequirements?: PhysicalCapabilityRequirement[];
   physicalFeedback?: PhysicalFeedbackInput;
   physicalTransitions?: PhysicalTransitionProposal[];
   physicalConstraints?: PhysicalConstraint[];
@@ -81,6 +89,7 @@ export interface LunaCoreDecision {
   physicalWorldQuery?: PhysicalWorldQueryDecision;
   physicalState?: PhysicalStateEstimateSet;
   physicalChange?: PhysicalChangeDecision;
+  physicalCapabilities?: PhysicalCapabilityDecision;
   physicalFeedback?: PhysicalFeedbackDecision;
   physicalConstraints?: PhysicalConstraintDecision;
   physicalOutput?: PhysicalOutputDecision;
@@ -116,6 +125,13 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
         input.physicalCurrentTime
       )
     : undefined;
+  const physicalCapabilities =
+    input.physicalCapabilities || input.physicalCapabilityRequirements
+      ? evaluatePhysicalCapabilities(
+          input.physicalCapabilities ?? [],
+          input.physicalCapabilityRequirements ?? []
+        )
+      : undefined;
 
   const estimatedObservations = physicalState?.estimates.map((estimate) => ({
     name: estimate.variable,
@@ -152,6 +168,10 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
   const requiredPhysicalStateStale =
     input.physicalOutput?.changesPhysicalState === true &&
     (physicalChange?.staleRequiredVariables.length ?? 0) > 0;
+  const requiredCapabilityUnavailable =
+    input.physicalOutput?.changesPhysicalState === true &&
+    physicalCapabilities !== undefined &&
+    physicalCapabilities.actionReady === false;
 
   const physicalOutput = input.physicalOutput
     ? evaluatePhysicalOutput(input.physicalOutput, {
@@ -159,13 +179,15 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
         feedbackDisposition:
           physicalConstraints?.status === "blocked" ||
           spatialTransitionUnknown ||
-          requiredPhysicalStateStale
+          requiredPhysicalStateStale ||
+          requiredCapabilityUnavailable
             ? "observe"
             : physicalFeedback?.disposition,
         feedbackAdjustmentScale:
           physicalConstraints?.status === "blocked" ||
           spatialTransitionUnknown ||
-          requiredPhysicalStateStale
+          requiredPhysicalStateStale ||
+          requiredCapabilityUnavailable
             ? 0
             : physicalFeedback?.adjustmentScale,
         authorized: authorization?.authorized
@@ -186,6 +208,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     physicalConstraints?.status === "blocked" ||
     spatialTransitionUnknown ||
     requiredPhysicalStateStale ||
+    requiredCapabilityUnavailable ||
     unauthorisedPhysicalAction;
 
   return {
@@ -196,6 +219,7 @@ export function runLunaCore(input: LunaCoreInput): LunaCoreDecision {
     physicalWorldQuery,
     physicalState,
     physicalChange,
+    physicalCapabilities,
     physicalFeedback,
     physicalConstraints,
     physicalOutput,
